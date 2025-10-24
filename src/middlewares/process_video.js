@@ -118,16 +118,17 @@ async function processVideo(req, res, next) {
 	console.info('Making previews...');
 
 	const previewsDir = path.join(outputDir, 'previews');
+	
 	ensureDir(previewsDir);
-	await new Promise((resolve, reject) => ffmpeg(inputPath).output(`${previewsDir}/thumb-%04d.png`).outputOptions(['-vf', 'fps=1/3,scale=-2:144']).on('end', resolve).on('error', reject).run());
+	await new Promise((resolve, reject) => ffmpeg(inputPath).output(`${previewsDir}/thumb-%04d.png`).outputOptions(['-vf', 'fps=1/10,scale=-2:80']).on('end', resolve).on('error', reject).run());
 	const previewFiles = fs
 		.readdirSync(previewsDir)
 		.filter((f) => f.endsWith('.png'))
 		.sort();
 	let previewsVtt = 'WEBVTT\n\n';
 	previewFiles.forEach((file, i) => {
-		const start = toTimecode(i * 3);
-		const end = toTimecode((i + 1) * 3);
+		const start = toTimecode(i * 10);
+		const end = toTimecode((i + 1) * 10);
 		previewsVtt += `${start} --> ${end}\n${outputDir}/previews/${file}\n\n`;
 	});
 	fs.writeFileSync(path.join(outputDir, 'previews.vtt'), previewsVtt);

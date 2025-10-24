@@ -10,7 +10,7 @@ const processVideo = require('../middlewares/process_video');
 const router = Router();
 
 router.get('/', queries, async (req, res) => {
-	if (req.queries.anime) {		
+	if (req.queries.anime) {
 		const anime = await AnimeModel.findOne({ anime: req.queries.anime });
 		const season = req.queries.season && anime.seasons.find((s) => s.season == req.queries.season);
 		const episode = req.queries.episode && season.episodes.find((e) => e.episode == req.queries.episode);
@@ -77,6 +77,7 @@ router.post(
 		res.send(collection);
 	},
 );
+
 router.put('/', (req, res) => {});
 router.delete('/', (req, res) => {});
 
