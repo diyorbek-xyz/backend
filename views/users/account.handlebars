@@ -1,0 +1,28 @@
+<form id='account' action="/account?id={{account._id}}&_method=PUT" enctype="multipart/form-data" method='post'>
+	<label for='avatar'>
+		<span class='label'>Avatar:</span>
+		<input class='value' type='file' name='avatar' value='{{account.avatar}}' id='avatar' autocomplete='on' />
+	</label>
+	<label for='banner'>
+		<span class='label'>Banner:</span>
+		<input class='value' type='file' name='banner' value='{{account.banner}}' id='banner' autocomplete='on' />
+	</label>
+	<label for='first_name'>
+		<span class='label'>First name:</span>
+		<input class='value' type='text' name='first_name' value='{{account.first_name}}' id='first_name' autocomplete='on' />
+	</label>
+	<label for='last_name'>
+		<span class='label'>Last name:</span>
+		<input class='value' type='text' name='last_name' value='{{account.last_name}}' id='last_name' autocomplete='on' />
+	</label>
+	<label for='username'>
+		<span class='label'>Username:</span>
+		<input class='value' type='text' name='username' value='{{account.username}}' id='username' autocomplete='on' />
+	</label>
+	<label>
+		<span class='label'>Role:</span>
+		<span class='value role'>{{account.role}}</span>
+	</label>
+
+	<button type='submit'>Save</button>
+</form>

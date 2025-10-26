@@ -1,17 +1,17 @@
 const jwt = require('jsonwebtoken');
 const LoginModel = require('../models/login');
+const response = require('../utils/response');
 
 const verifyToken = async (req, res, next) => {
-	const token = req.headers.authorization?.split(' ')[1];
-	if (!token) return res.status(401).json({ error: 'Token required' });
-	
+	const token = req.headers.authorization?.split(' ')[1] ?? req.cookies.token;
+	if (!token) return response({ req, res, data: 'Token required', redirect: '/login' });
 
 	try {
-		const user = await jwt.verify(token, process.env.SECRET); // { id, role }
-		
+		const user = await jwt.verify(token, process.env.SECRET);
+
 		const data = await LoginModel.find({ _id: user.id });
-		if (!data[0]) return res.status(401).json({ error: 'User Not Found' });		
-		
+		if (!data[0]) return res.status(401).json({ error: 'User Not Found' });
+
 		req.user = user;
 		next();
 	} catch (err) {

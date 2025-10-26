@@ -4,17 +4,27 @@ const { Router } = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const LoginModel = require('../models/login');
-const { verifyToken } = require('../middlewares/login');
+const { verifyToken, permit } = require('../middlewares/login');
 const upload = require('../middlewares/upload');
-const { AnimeModel } = require('../models/anime');
+const response = require('../utils/response');
+const path = require('path');
+const fs = require('fs').promises;
+const sharp = require('sharp');
 
 const router = Router();
 
-router.get('/accounts', verifyToken, async (req, res) => {
+router.get('/signup', (req, res) => res.render('users/signup', { layout: 'login' }));
+router.get('/login', (req, res) => res.render('users/login', { layout: 'login' }));
+
+router.get('/accounts', verifyToken, permit('admin'), async (req, res) => {
 	try {
-		const { username } = req.query;
-		const data = await LoginModel.find(username ? { username: username.toLowerCase() } : {});
-		res.json(data);
+		if (req.query.id) {
+			const data = await LoginModel.findById(req.query.id).select('-password -__v').lean();
+			response({ req, res, render: 'users/account', name: 'account', data: data });
+		} else {
+			const data = await LoginModel.find().lean();
+			response({ req, res, render: 'users/accounts', name: 'accounts', data: data });
+		}
 	} catch (err) {
 		res.status(404).json({ message: 'Error', err });
 	}
@@ -27,15 +37,21 @@ router.post('/signup', async (req, res) => {
 
 	if (!exist) {
 		const user = await LoginModel.create({ username: username.toLowerCase(), password: hashed, role, first_name, last_name });
-		const token = jwt.sign({ id: user._id, role: user.role }, process.env.SECRET);
-		res.json({ token, user });
+
+		if (req.query.create) {
+			response({ redirect: '/accounts', req, res, data: user });
+		} else {
+			const token = jwt.sign({ id: user._id, role: user.role }, process.env.SECRET);
+			res.cookie('token', token);
+			response({ redirect: '/me', req, res, data: { token, user } });
+		}
 	} else {
-		res.status(409).json({ message: 'This username already taken' });
+		res.status(409).json({ message: 'This username already taken' }).redirect('/signup');
 	}
 });
-
 router.post('/login', async (req, res) => {
 	const { username, password } = req.body;
+
 	const user = await LoginModel.findOne({ username: username.toLowerCase() });
 	if (!user) return res.status(404).json({ message: 'User Not Found' });
 
@@ -43,16 +59,34 @@ router.post('/login', async (req, res) => {
 	if (!match) return res.status(401).json({ message: 'Wrong passwod' });
 
 	const token = jwt.sign({ id: user._id, role: user.role }, process.env.SECRET);
-	res.json({ token, user });
+
+	res.cookie('token', token);
+	response({ redirect: '/me', req, res, data: { token, user } });
 });
 
-router.get('/me', verifyToken, async (req, res) => {
-	const user = await LoginModel.findById(req.user.id).select('-password -__v -role -_id');
-	res.json(user);
+router.get('/logout', (req, res) => {
+	res.clearCookie('token');
+	response({ redirect: '/login', req, res });
 });
 
+router.delete('/account', verifyToken, permit('admin'), async (req, res) => {
+	try {
+		if (req.query.id !== req.user.id) {
+			const data = await LoginModel.findById(req.query.id);
+
+			if (data.avatar) await fs.unlink(data.avatar);
+			if (data.banner) await fs.unlink(data.banner);
+
+			await LoginModel.findByIdAndDelete(req.query.id);
+			return response({ req, res, redirect: '/accounts' });
+		}
+		return response({ req, res, data: { message: 'You can not delete yourself' }, redirect: '/accounts' });
+	} catch (err) {
+		res.status(404).json({ message: 'Error', err });
+	}
+});
 router.put(
-	'/me/:id',
+	'/account',
 	verifyToken,
 	upload.fields([
 		{ name: 'avatar', maxCount: 1 },
@@ -62,12 +96,49 @@ router.put(
 		const props = req.body;
 		const avatar = req.files?.avatar?.[0]?.path;
 		const banner = req.files?.banner?.[0]?.path;
+		const newDir = path.join('uploads', 'users', props.username);
+		const newBanner = banner && path.join(newDir, 'banner.png');
+		const newAvatar = avatar && path.join(newDir, 'avatar.png');
 
-		const id = req.user.id || req.params.id;
+		await fs.mkdir(newDir, { recursive: true });
 
-		const user = await LoginModel.findByIdAndUpdate(id, { avatar, banner, ...props }, { new: true });
+		if (banner) {
+			await sharp(banner)
+				.resize({
+					height: 480,
+					fit: 'cover',
+					position: 'center',
+				})
+				.toFormat('png', { compression: 'hevc', compressionLevel: 5, quality: 85, alphaQuality: 80, preset: 'drawing' })
+				.toFile(newBanner)
+				.then(async () => await fs.unlink(banner));
+		}
+		if (avatar) {
+			await sharp(avatar)
+				.resize({
+					height: 480,
+					fit: 'cover',
+					position: 'center',
+				})
+				.toFormat('png', { compression: 'hevc', compressionLevel: 5, quality: 85, alphaQuality: 80, preset: 'drawing' })
+				.toFile(newAvatar)
+				.then(async () => await fs.unlink(avatar));
+		}
+		const id = req.query.id ?? req.user.id;
+
+		const user = await LoginModel.findByIdAndUpdate(id, { avatar: newAvatar, banner: newBanner, ...props }, { new: true })
+			.select('-password -__v -role')
+			.lean();
+
+		response({ req, res, data: user, redirect: `/accounts?id=${id}` });
 		if (!user) return res.status(404).json({ message: 'User Not Found' });
-	},
+	}
 );
+
+router.get('/account', verifyToken, async (req, res) => {
+	const user = await LoginModel.findById(req.user.id).select('-password -__v -role -_id').lean();
+	
+	response({ req, res, render: 'users/dashboard', data: user });
+});
 
 module.exports = router;

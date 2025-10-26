@@ -20,6 +20,7 @@ async function processVideo(req, res, next) {
 	console.log('Starting process video...');
 	const inputPath = req.files.file[0].path;
 	const outputDir = path.join('uploads', 'animes', req.body.name.toString(), req.body.season.toString(), req.body.episode.toString());
+	
 	ensureDir(outputDir);
 
 	// 1. Multi-resolution HLS

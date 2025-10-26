@@ -3,13 +3,15 @@
 const { Router } = require('express');
 const upload = require('../middlewares/upload');
 const queries = require('../middlewares/queries');
-const { AnimeModel, addEpisode } = require('../models/anime');
+const { AnimeModel } = require('../models/anime');
 const addPoster = require('../middlewares/add_poster');
 const processVideo = require('../middlewares/process_video');
+const { verifyToken, permit } = require('../middlewares/login');
+const response = require('../utils/response');
 
 const router = Router();
 
-router.get('/', queries, async (req, res) => {
+router.get('/', verifyToken, queries, async (req, res) => {
 	if (req.queries.anime) {
 		const anime = await AnimeModel.findOne({ anime: req.queries.anime });
 		const season = req.queries.season && anime.seasons.find((s) => s.season == req.queries.season);
@@ -22,8 +24,8 @@ router.get('/', queries, async (req, res) => {
 
 		res.json(data);
 	} else {
-		const data = await AnimeModel.find();
-		res.json(data);
+		const data = await AnimeModel.find().lean();
+		response({ req, res, data, render: 'animes/animes', name: 'animes' });
 	}
 });
 
@@ -75,7 +77,7 @@ router.post(
 		console.info('Adding episode finished.');
 
 		res.send(collection);
-	},
+	}
 );
 
 router.put('/', (req, res) => {});

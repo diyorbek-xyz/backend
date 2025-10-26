@@ -1,0 +1,11 @@
+<form id='dashboard' action='/me' method='post'>
+	<img src={{dashboard.banner}} />
+	<img src={{dashboard.avatar}} />
+	<label>Username: <input  type='text' name='username' value={{dashboard.username}} /></label>
+	<label>First name: <input  type='text' name='first_name' value={{dashboard.first_name}} /></label>
+	<label>Last name: <input  type='text' name='last_name' value={{dashboard.last_name}} /></label>
+	<div>
+		<a class='click' href='/logout'>Log Out</a>
+		<input type='submit' class='click' value='Save' />
+	</div>
+</form>

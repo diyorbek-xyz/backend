@@ -7,7 +7,7 @@ const LoginSchema = new mongoose.Schema({
 	last_name: { type: String, required: true },
 	username: { type: String, required: true },
 	password: { type: String, required: true },
-	role: { type: String, enum: ['user', 'studio', 'creator'], default: 'user', required: true },
+	role: { type: String, enum: ['user', 'admin', 'creator'], default: 'user', required: true },
 	premium: Boolean,
 	avatar: String,
 	banner: String,
