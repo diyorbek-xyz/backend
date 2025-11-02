@@ -3,7 +3,7 @@ const LoginModel = require('../models/login');
 const response = require('../utils/response');
 
 const verifyToken = async (req, res, next) => {
-	const token = req.headers.authorization?.split(' ')[1] ?? req.cookies.token;
+	const token = req.cookies.token;
 	if (!token) return response({ req, res, data: 'Token required', redirect: '/login' });
 
 	try {

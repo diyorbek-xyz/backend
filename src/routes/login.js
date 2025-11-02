@@ -50,6 +50,7 @@ router.post('/signup', async (req, res) => {
 	}
 });
 router.post('/login', async (req, res) => {
+	
 	const { username, password } = req.body;
 
 	const user = await LoginModel.findOne({ username: username.toLowerCase() });
@@ -58,7 +59,7 @@ router.post('/login', async (req, res) => {
 	const match = await bcrypt.compare(password, user.password);
 	if (!match) return res.status(401).json({ message: 'Wrong passwod' });
 
-	const token = jwt.sign({ id: user._id, role: user.role }, process.env.SECRET);
+	const token = jwt.sign({ id: user._id, role: user.role, username: user.username }, process.env.SECRET);
 
 	res.cookie('token', token);
 	response({ redirect: '/account', req, res, data: { token, user } });
@@ -122,7 +123,7 @@ router.put(
 
 		response({ req, res, data: user, redirect: `/accounts?id=${id}` });
 		if (!user) return res.status(404).json({ message: 'User Not Found' });
-	}
+	},
 );
 
 router.delete('/account', verifyToken, permit('admin', 'creator'), async (req, res) => {
