@@ -1,5 +1,3 @@
-/** @format */
-
 const { default: mongoose } = require('mongoose');
 
 const LoginSchema = new mongoose.Schema({
