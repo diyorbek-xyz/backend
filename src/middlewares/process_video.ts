@@ -1,11 +1,9 @@
 import { NextFunction, Request, Response } from 'express';
-import { NewEpisode } from '../types';
 import ffmpeg from 'fluent-ffmpeg';
 import fs from 'fs';
 import path from 'path';
 import chalk from 'chalk';
 import processPreviews from './process_thumbs';
-import { AnimeModel, SeasonModel } from '../models/anime';
 
 function ensureDir(dir: string) {
 	if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });

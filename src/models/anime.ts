@@ -38,9 +38,7 @@ const EpisodeSchema = new Schema(
 
 SeasonSchema.pre('save', function (next) {
 	const doc = this as any;
-	if (doc) {
-		doc.totalEpisodes = doc.episodes.length ?? 0;
-	}
+	if (doc) doc.totalEpisodes = doc.episodes.length ?? 0;
 	next();
 });
 SeasonSchema.post('save', async (doc, next) => {
